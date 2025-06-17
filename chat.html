@@ -5,63 +5,59 @@
   <meta charset="UTF-8">
   <title>ŞahinHukuk Chatbot</title>
   <style>
-    body { margin:0; font-family: Arial, sans-serif; background:#fff; }
-    #chat-container { display:flex; flex-direction:column; height:100vh; }
+    body { margin:0; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; background:#f8f8f8; }
+    #chat-box { width:90%; max-width:600px; background:white; border:1px solid #ccc; border-radius:8px; display:flex; flex-direction:column; height:80vh; }
     #messages { flex:1; padding:10px; overflow-y:auto; }
-    .msg { margin:5px 0; padding:8px; border-radius:5px; max-width:80%; }
-    .user { align-self:flex-end; background:#0078D4; color:#fff; }
-    .bot { align-self:flex-start; background:#f1f1f1; color:#000; }
-    #input-area { display:flex; padding:10px; border-top:1px solid #ddd; }
-    #input { flex:1; padding:8px; border:1px solid #ccc; border-radius:4px; }
-    #send { margin-left:8px; padding:8px 12px; background:#0078D4; color:#fff; border:none; border-radius:4px; cursor:pointer;}
-    #close { position:absolute; top:10px; right:10px; cursor:pointer; color:#888; font-size:18px; }
+    .msg { margin:5px 0; padding:10px; border-radius:6px; max-width:80%; }
+    .user { align-self:flex-end; background:#0078D4; color:white; }
+    .bot { align-self:flex-start; background:#e4e4e4; }
+    #input-area { display:flex; border-top:1px solid #ccc; }
+    #input { flex:1; padding:10px; border:none; outline:none; font-size:16px; }
+    #send { padding:10px 15px; background:#0078D4; color:white; border:none; cursor:pointer; }
   </style>
 </head>
 <body>
-
-<div id="chat-container">
-  <div id="close">✖</div>
-  <div id="messages"></div>
-  <div id="input-area">
-    <input type="text" id="input" placeholder="Sorunuzu yazın..." />
-    <button id="send">Gönder</button>
+  <div id="chat-box">
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="input" placeholder="Sorunuzu yazın..." />
+      <button id="send">Gönder</button>
+    </div>
   </div>
-</div>
+  <script>
+    const workerUrl = 'https://sahinhukuk-chatbot.cannnsahinnn.workers.dev';
 
-<script>
-  const workerUrl = 'https://sahinhukuk-chatbot.cannnsahinnn.workers.dev';
-  const chat = document.getElementById('chat-container');
-  document.getElementById('close').onclick = () => window.parent.postMessage('closeChat','*');
-
-  async function sendMessage() {
-    const input = document.getElementById('input');
-    if (!input.value.trim()) return;
-    addMessage(input.value, 'user'); 
-    const userMsg = input.value;
-    input.value = '';
-    try {
-      const res = await fetch(workerUrl, {
-        method:'POST', headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({ message: userMsg })
-      });
-      const data = await res.json();
-      if (data.reply) addMessage(data.reply,'bot');
-      else addMessage('Üzgünüm, bir hata oldu.','bot');
-    } catch(e) {
-      addMessage('Sunucuya ulaşılamadı.','bot');
+    async function sendMessage() {
+      const input = document.getElementById('input');
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, 'user');
+      input.value = '';
+      try {
+        const res = await fetch(workerUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        addMessage(data.reply || 'Yanıt alınamadı.', 'bot');
+      } catch {
+        addMessage('Sunucu hatası.', 'bot');
+      }
     }
-  }
 
-  function addMessage(text,cls){
-    const d = document.createElement('div');
-    d.className = 'msg '+ cls;
-    d.textContent = text;
-    document.getElementById('messages').appendChild(d);
-    d.scrollIntoView();
-  }
+    function addMessage(text, type) {
+      const msg = document.createElement('div');
+      msg.className = 'msg ' + type;
+      msg.textContent = text;
+      document.getElementById('messages').appendChild(msg);
+      msg.scrollIntoView();
+    }
 
-  document.getElementById('send').onclick = sendMessage;
-  document.getElementById('input').onkeydown = e => e.key==='Enter' && sendMessage();
-</script>
+    document.getElementById('send').onclick = sendMessage;
+    document.getElementById('input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  </script>
 </body>
 </html>
